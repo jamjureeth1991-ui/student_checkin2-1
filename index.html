@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบเช็คชื่อนักเรียน</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --purple-main: #673AB7;
+            --purple-light: #F3E5F5;
+            --orange-border: #FF9800;
+            --green-status: #4CAF50;
+            --orange-status: #FF9800;
+            --blue-status: #2196F3;
+            --red-status: #F44336;
+        }
+        * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; }
+        body { background-color: #fcfcfc; color: #333; }
+        
+        /* Navbar & Header */
+        header { background-color: var(--purple-main); color: white; text-align: center; padding: 20px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        header h1 { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
+        header p { font-size: 16px; font-weight: 300; opacity: 0.9; }
+        
+        nav { display: flex; justify-content: center; gap: 10px; background-color: white; padding: 15px; border-bottom: 2px solid var(--orange-border); flex-wrap: wrap; }
+        nav button { background-color: white; color: var(--purple-main); border: 2px solid var(--purple-main); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; transition: 0.3s; }
+        nav button:hover, nav button.active { background-color: var(--purple-main); color: white; }
+
+        /* Container */
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Cards & Forms */
+        .card { background: white; border: 2px solid var(--orange-border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-family: 'Sarabun'; }
+        .btn-primary { background-color: var(--purple-main); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%; }
+        .btn-primary:hover { background-color: #512DA8; }
+        .btn-outline { background-color: white; color: var(--purple-main); border: 1px solid var(--purple-main); padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+        .btn-danger { background-color: var(--red-status); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+        .btn-danger-sm { background-color: var(--red-status); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+
+        /* Table & Student List */
+        .student-list { display: flex; flex-direction: column; gap: 10px; }
+        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--purple-light); border-radius: 8px; border: 1px solid #e1bee7; flex-wrap: wrap;}
+        .student-info { font-size: 16px; font-weight: 600; }
+        
+        .radio-group { display: flex; gap: 10px; }
+        .radio-group label { cursor: pointer; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid #ccc; background: white; font-size: 14px; }
+        .radio-group input[type="radio"] { display: none; }
+        
+        /* Radio Colors */
+        .radio-group input[value="มา"]:checked + label { background-color: var(--green-status); color: white; border-color: var(--green-status); }
+        .radio-group input[value="ป่วย"]:checked + label { background-color: var(--orange-status); color: white; border-color: var(--orange-status); }
+        .radio-group input[value="ลา"]:checked + label { background-color: var(--blue-status); color: white; border-color: var(--blue-status); }
+        .radio-group input[value="ขาด"]:checked + label { background-color: var(--red-status); color: white; border-color: var(--red-status); }
+
+        /* Stats Table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: var(--purple-main); color: white; }
+        
+        /* Status Text Colors */
+        .text-มา { color: var(--green-status); font-weight: bold; }
+        .text-ป่วย { color: var(--orange-status); font-weight: bold; }
+        .text-ลา { color: var(--blue-status); font-weight: bold; }
+        .text-ขาด { color: var(--red-status); font-weight: bold; }
+
+        @media (max-width: 600px) {
+            .student-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .radio-group { width: 100%; justify-content: space-between; }
+            nav button { flex: 1 1 45%; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>ระบบเช็คชื่อนักเรียน</h1>
+    <p>โรงเรียนบ้านแครายเกษตรพันธุ์พิทยาคาร<br>ชั้นประถมศึกษาปีที่ 2/1</p>
+</header>
+
+<nav>
+    <button onclick="nav('checkin')" id="nav-checkin" class="active"><i class="fas fa-check-circle"></i> เช็คชื่อ</button>
+    <button onclick="nav('stats')" id="nav-stats"><i class="fas fa-chart-bar"></i> สถิติ</button>
+    <button onclick="nav('manage')" id="nav-manage"><i class="fas fa-users-cog"></i> เพิ่ม-ลบรายชื่อ</button>
+</nav>
+
+<div class="container">
+    <!-- หน้า 2: เช็คชื่อ -->
+    <div id="page-checkin" class="page active">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="far fa-calendar-alt"></i> ลงเวลาเรียน</h3>
+                <input type="date" id="checkin-date" style="width: auto; margin: 0;">
+            </div>
+            <button class="btn-outline" onclick="checkAllPresent()" style="margin-bottom:15px;"><i class="fas fa-check-double"></i> เช็ค "มา" ทุกคน</button>
+            <div class="student-list" id="student-list-container">
+                <p style="text-align:center; color:#888;">กำลังโหลดรายชื่อ...</p>
+            </div>
+            <button class="btn-primary" onclick="saveAttendance()" style="margin-top: 20px;"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
+        </div>
+    </div>
+
+    <!-- หน้า 3: สถิติ -->
+    <div id="page-stats" class="page">
+        <div class="card">
+            <h3><i class="fas fa-chart-pie"></i> สถิติภาพรวม</h3>
+            
+            <div style="margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="date" id="stat-date" style="width: auto; margin:0;">
+                <button class="btn-outline" onclick="loadDailyStats()"><i class="fas fa-search"></i> ดูรายวัน</button>
+                <input type="month" id="stat-month" style="width: auto; margin:0;">
+                <button class="btn-outline" onclick="loadMonthlyStats()"><i class="fas fa-calendar"></i> ดูรายเดือน</button>
+                <button class="btn-primary" style="width: auto; background-color:#333;" onclick="exportPDF()"><i class="fas fa-print"></i> พิมพ์ PDF</button>
+            </div>
+
+            <div id="print-area">
+                <h4 id="stat-title" style="margin-bottom: 10px; text-align: center;">กรุณาเลือกวันที่หรือเดือน</h4>
+                <div id="stat-summary" style="margin-bottom: 15px; font-size: 14px;"></div>
+                <div id="stat-table-container" style="overflow-x: auto;">
+                    <!-- ตารางสถิติ -->
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; display:flex; gap:10px;">
+                <button class="btn-danger" onclick="deleteData('date')"><i class="fas fa-trash"></i> ลบข้อมูลตามวันที่เลือก</button>
+                <button class="btn-danger" onclick="deleteData('month')"><i class="fas fa-trash"></i> ลบข้อมูลตามเดือนที่เลือก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้า 4: เพิ่มและลบรายชื่อนักเรียน -->
+    <div id="page-manage" class="page">
+        <!-- ฟอร์มเพิ่มนักเรียน -->
+        <div class="card">
+            <h3><i class="fas fa-user-plus"></i> เพิ่มรายชื่อนักเรียน</h3>
+            <div style="margin-top: 15px;">
+                <label style="font-weight: bold;">วิธีที่ 1: เพิ่มทีละคน</label>
+                <div style="display:flex; gap:10px; flex-wrap: wrap; margin-top: 5px;">
+                    <input type="number" id="std-no" placeholder="เลขที่" style="flex: 1; min-width: 70px;">
+                    <input type="text" id="std-name" placeholder="ชื่อ-สกุล" style="flex: 3; min-width: 200px;">
+                    <select id="std-gender" style="flex: 1; min-width: 100px;">
+                        <option value="ชาย">ชาย</option>
+                        <option value="หญิง">หญิง</option>
+                    </select>
+                    <select id="std-class" style="flex: 1; min-width: 100px;">
+                        <option value="ป.2/1">ป.2/1</option>
+                       
+                    </select>
+                </div>
+                <button class="btn-outline" onclick="addSingleStudent()">เพิ่ม 1 คน</button>
+            </div>
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px dashed #ccc;">
+
+            <div>
+                <label style="font-weight: bold;">วิธีที่ 2: เพิ่มหลายคน (คัดลอกวาง)</label>
+                <p style="font-size: 12px; color: gray;">รูปแบบ: เลขที่,ชื่อ-สกุล,เพศ,ชั้น(เว้นบรรทัดละ 1 คน)</p>
+                <textarea id="std-bulk" rows="4" placeholder="1,เด็กชายสมชาย ใจดี,ชาย,ป.2/1&#10;2,เด็กหญิงสมหญิง รักเรียน,หญิง,ป.2/1"></textarea>
+                <button class="btn-outline" onclick="addBulkStudents()">เพิ่มหลายคน</button>
+            </div>
+        </div>
+
+        <!-- รายชื่อนักเรียนปัจจุบันและปุ่มลบ -->
+        <div class="card">
+            <h3><i class="fas fa-users"></i> รายชื่อนักเรียนในระบบ</h3>
+            <div id="manage-student-list" style="overflow-x: auto; margin-top: 15px;">
+                <!-- ตารางรายชื่อนักเรียนจะแสดงที่นี่ -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // ⚠️ นำ URL จาก Apps Script มาใส่ตรงนี้
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsW7ek0-V5iXlc2HNaoFRsPbFcNnXxBbR7ULM2o3vAhAyreiImi_la0rDu_KxrjIXm/exec"; 
+    // ==========================================
+
+    let studentData = [];
+
+    // เซ็ตวันที่ปัจจุบันเป็นค่าเริ่มต้น
+    document.getElementById('checkin-date').valueAsDate = new Date();
+    document.getElementById('stat-date').valueAsDate = new Date();
+
+    // ฟังก์ชันเปลี่ยนหน้า
+    function nav(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(`page-${page}`).classList.add('active');
+        document.getElementById(`nav-${page}`).classList.add('active');
+
+        // โหลดข้อมูลถ้ายังไม่มี
+        if(studentData.length === 0) fetchStudents();
+    }
+
+    // Call API Helper
+    async function apiCall(action, payload = {}) {
+        Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        try {
+            const response = await fetch(SCRIPT_URL + "?action=" + action, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            const resData = await response.json();
+            if(resData.status === 'success') {
+                Swal.close();
+                return resData;
+            } else {
+                Swal.fire('ข้อผิดพลาด', resData.message, 'error');
+                return null;
+            }
+        } catch (error) {
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+            return null;
+        }
+    }
+
+    // โหลดรายชื่อนักเรียนมาสร้างฟอร์มเช็คชื่อ และตารางลบรายชื่อ
+    async function fetchStudents() {
+        const res = await apiCall('getStudents');
+        if(res && res.data) {
+            // เรียงลำดับตามเลขที่
+            studentData = res.data.sort((a, b) => parseInt(a.no) - parseInt(b.no));
+            renderCheckinList();
+            renderManageStudentList(); // รีเฟรชตารางหน้าลบรายชื่อด้วย
+        }
+    }
+
+    // สร้างตารางในหน้า เช็คชื่อ
+    function renderCheckinList() {
+        const container = document.getElementById('student-list-container');
+        container.innerHTML = '';
+        if(studentData.length === 0) {
+            container.innerHTML = '<p style="text-align:center;">ยังไม่มีรายชื่อนักเรียน กรุณาเพิ่มรายชื่อ</p>';
+            return;
+        }
+
+        studentData.forEach(std => {
+            const div = document.createElement('div');
+            div.className = 'student-item';
+            div.innerHTML = `
+                <div class="student-info">เลขที่ ${std.no} ${std.name} (${std.class})</div>
+                <div class="radio-group" id="group-${std.no}">
+                    <input type="radio" name="status-${std.no}" id="ma-${std.no}" value="มา">
+                    <label for="ma-${std.no}">มา</label>
+                    <input type="radio" name="status-${std.no}" id="puay-${std.no}" value="ป่วย">
+                    <label for="puay-${std.no}">ป่วย</label>
+                    <input type="radio" name="status-${std.no}" id="la-${std.no}" value="ลา">
+                    <label for="la-${std.no}">ลา</label>
+                    <input type="radio" name="status-${std.no}" id="kad-${std.no}" value="ขาด">
+                    <label for="kad-${std.no}">ขาด</label>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // สร้างตารางในหน้า จัดการ (เพิ่ม-ลบ)
+    function renderManageStudentList() {
+        const container = document.getElementById('manage-student-list');
+        if(studentData.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color: gray;">ยังไม่มีรายชื่อนักเรียนในระบบ</p>';
+            return;
+        }
+        
+        let html = `<table><tr><th>เลขที่</th><th>ชื่อ-สกุล</th><th>เพศ</th><th>ชั้น</th><th>จัดการ</th></tr>`;
+        studentData.forEach(std => {
+            html += `<tr>
+                <td>${std.no}</td>
+                <td style="text-align:left;">${std.name}</td>
+                <td>${std.gender}</td>
+                <td>${std.class}</td>
+                <td>
+                    <button class="btn-danger-sm" onclick="deleteStudent('${std.no}', '${std.name}')">
+                        <i class="fas fa-trash-alt"></i> ลบ
+                    </button>
+                </td>
+            </tr>`;
+        });
+        html += `</table>`;
+        container.innerHTML = html;
+    }
+
+    // เช็คมาทุกคน
+    function checkAllPresent() {
+        studentData.forEach(std => {
+            const radio = document.getElementById(`ma-${std.no}`);
+            if(radio) radio.checked = true;
+        });
+    }
+
+    // บันทึกเช็คชื่อ
+    async function saveAttendance() {
+        const date = document.getElementById('checkin-date').value;
+        if(!date) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกวันที่', 'warning');
+
+        let records = [];
+        let missing = false;
+
+        studentData.forEach(std => {
+            const selected = document.querySelector(`input[name="status-${std.no}"]:checked`);
+            if(selected) {
+                records.push({ no: std.no, name: std.name, gender: std.gender, status: selected.value });
+            } else {
+                missing = true;
+            }
+        });
+
+        if(missing) {
+            return Swal.fire('แจ้งเตือน', 'กรุณาเช็คชื่อให้ครบทุกคน!', 'warning');
+        }
+
+        const payload = { date: date, records: records };
+        const res = await apiCall('saveAttendance', payload);
+        if(res) {
+            Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: res.message, timer: 1500, showConfirmButton: false });
+        }
+    }
+
+    // เพิ่มนักเรียน 1 คน
+    async function addSingleStudent() {
+        const payload = {
+            no: document.getElementById('std-no').value,
+            name: document.getElementById('std-name').value,
+            gender: document.getElementById('std-gender').value,
+            class: document.getElementById('std-class').value
+        };
+        if(!payload.no || !payload.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบ', 'warning');
+
+        const res = await apiCall('addStudent', payload);
+        if(res) {
+            Swal.fire('สำเร็จ', 'เพิ่มนักเรียนเรียบร้อย', 'success');
+            document.getElementById('std-no').value = '';
+            document.getElementById('std-name').value = '';
+            await fetchStudents(); // อัปเดตข้อมูลแบบเรียลไทม์
+        }
+    }
+
+    // เพิ่มนักเรียนหลายคน (อัปเดตใหม่ รองรับการก็อปปี้จาก Excel/Sheets)
+    async function addBulkStudents() {
+        const text = document.getElementById('std-bulk').value;
+        if(!text.trim()) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูล', 'warning');
+        
+        const lines = text.split('\n');
+        const payload = [];
+        
+        for(let line of lines) {
+            if(!line.trim()) continue;
+            
+            // แยกข้อความด้วย คอมมา (,) หรือ ช่องว่าง Tab (กรณีก็อปจากตาราง)
+            const parts = line.split(/[\t,]/);
+            
+            if(parts.length >= 4) {
+                payload.push({ 
+                    no: parts[0].trim(), 
+                    name: parts[1].trim(), 
+                    gender: parts[2].trim(), 
+                    class: parts[3].trim() 
+                });
+            }
+        }
+
+        if(payload.length === 0) {
+            return Swal.fire('แจ้งเตือน', 'รูปแบบข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง', 'warning');
+        }
+
+        const res = await apiCall('addStudent', payload);
+        if(res) {
+            Swal.fire('สำเร็จ', 'เพิ่มรายชื่อเรียบร้อย', 'success');
+            document.getElementById('std-bulk').value = '';
+            await fetchStudents(); // อัปเดตข้อมูลแบบเรียลไทม์
+        }
+    }
+
+    // ลบนักเรียน 1 คน
+    async function deleteStudent(no, name) {
+        const confirm = await Swal.fire({
+            title: `ยืนยันลบรายชื่อ?`,
+            text: `ต้องการลบ "เลขที่ ${no} ${name}" ออกจากระบบใช่หรือไม่?\n(ข้อมูลการเช็คชื่อย้อนหลังของนักเรียนคนนี้จะยังคงอยู่)`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#F44336',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        });
+
+        if(confirm.isConfirmed) {
+            const res = await apiCall('deleteStudent', { no: no });
+            if(res) {
+                Swal.fire('ลบสำเร็จ!', res.message, 'success');
+                await fetchStudents(); // อัปเดตข้อมูลแบบเรียลไทม์
+            }
+        }
+    }
+
+    // โหลดสถิติรายวัน
+    async function loadDailyStats() {
+        const date = document.getElementById('stat-date').value;
+        if(!date) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกวันที่', 'warning');
+        
+        const res = await apiCall('getStats');
+        if(res) {
+            const dataDay = res.data.filter(r => r.date === date);
+            document.getElementById('stat-title').innerText = `สถิติประจำวันที่ ${date}`;
+            
+            // เรียงเลขที่ให้ถูกต้องก่อนแสดงผลสถิติ
+            dataDay.sort((a, b) => parseInt(a.no) - parseInt(b.no));
+
+            let html = `<table><tr><th>เลขที่</th><th>ชื่อ-สกุล</th><th>เพศ</th><th>สถานะ</th></tr>`;
+            let summary = { 'มา':0, 'ป่วย':0, 'ลา':0, 'ขาด':0, 'ชาย':0, 'หญิง':0 };
+
+            dataDay.forEach(r => {
+                html += `<tr><td>${r.no}</td><td style="text-align:left;">${r.name}</td><td>${r.gender}</td><td class="text-${r.status}">${r.status}</td></tr>`;
+                if(summary[r.status] !== undefined) summary[r.status]++;
+                if(r.gender === 'ชาย') summary['ชาย']++;
+                else if(r.gender === 'หญิง') summary['หญิง']++;
+            });
+            html += `</table>`;
+
+            document.getElementById('stat-table-container').innerHTML = html;
+            document.getElementById('stat-summary').innerHTML = `
+                <b>สรุป:</b> ชาย ${summary['ชาย']} คน, หญิง ${summary['หญิง']} คน <br>
+                <span class="text-มา">มา: ${summary['มา']}</span> | 
+                <span class="text-ป่วย">ป่วย: ${summary['ป่วย']}</span> | 
+                <span class="text-ลา">ลา: ${summary['ลา']}</span> | 
+                <span class="text-ขาด">ขาด: ${summary['ขาด']}</span>
+            `;
+        }
+    }
+
+    // โหลดสถิติรายเดือน
+    async function loadMonthlyStats() {
+        const month = document.getElementById('stat-month').value;
+        if(!month) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
+        
+        const res = await apiCall('getStats');
+        if(res) {
+            const dataMonth = res.data.filter(r => r.date.startsWith(month));
+            document.getElementById('stat-title').innerText = `สถิติประจำเดือน ${month}`;
+            
+            let studentStats = {};
+            dataMonth.forEach(r => {
+                if(!studentStats[r.no]) studentStats[r.no] = { name: r.name, total:0, 'มา':0, 'ป่วย':0, 'ลา':0, 'ขาด':0 };
+                studentStats[r.no][r.status]++;
+                studentStats[r.no].total++;
+            });
+
+            let html = `<table><tr><th>เลขที่</th><th>ชื่อ-สกุล</th><th>มา</th><th>ป่วย</th><th>ลา</th><th>ขาด</th><th>ร้อยละ (มาเรียน)</th></tr>`;
+            
+            Object.keys(studentStats).sort((a,b)=>a-b).forEach(no => {
+                let s = studentStats[no];
+                let percent = s.total > 0 ? ((s['มา'] / s.total) * 100).toFixed(2) : 0;
+                html += `<tr>
+                    <td>${no}</td><td style="text-align:left;">${s.name}</td>
+                    <td class="text-มา">${s['มา']}</td><td class="text-ป่วย">${s['ป่วย']}</td>
+                    <td class="text-ลา">${s['ลา']}</td><td class="text-ขาด">${s['ขาด']}</td>
+                    <td>${percent}%</td>
+                </tr>`;
+            });
+            html += `</table>`;
+
+            document.getElementById('stat-table-container').innerHTML = html;
+            document.getElementById('stat-summary').innerHTML = `<b>ข้อมูลสรุปรายบุคคล</b>`;
+        }
+    }
+
+    // พิมพ์ PDF
+    function exportPDF() {
+        const element = document.getElementById('print-area');
+        const opt = {
+            margin:       0.5,
+            filename:     'รายงานสถิติการมาเรียน.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'A4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // ลบข้อมูลสถิติ
+    async function deleteData(type) {
+        let title, payload;
+        if(type === 'date') {
+            const date = document.getElementById('stat-date').value;
+            if(!date) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกวันที่ก่อน', 'warning');
+            title = `ยืนยันลบข้อมูลวันที่ ${date} หรือไม่?`;
+            payload = { date: date };
+        } else {
+            const month = document.getElementById('stat-month').value;
+            if(!month) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือนก่อน', 'warning');
+            title = `ยืนยันลบข้อมูลทั้งเดือน ${month} หรือไม่?`;
+            payload = { month: month };
+        }
+
+        const confirm = await Swal.fire({
+            title: title, text: "การดำเนินการนี้จะไม่กระทบข้อมูลวันอื่น", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#F44336', confirmButtonText: 'ใช่, ลบเลย!', cancelButtonText: 'ยกเลิก'
+        });
+
+        if(confirm.isConfirmed) {
+            const action = type === 'date' ? 'deleteDate' : 'deleteMonth';
+            const res = await apiCall(action, payload);
+            if(res) {
+                Swal.fire('ลบแล้ว!', res.message, 'success');
+                document.getElementById('stat-table-container').innerHTML = '';
+                document.getElementById('stat-summary').innerHTML = '';
+            }
+        }
+    }
+
+    // เริ่มต้นดึงข้อมูลเมื่อโหลดหน้าเว็บ
+    fetchStudents();
+</script>
+</body>
+</html>
